@@ -1,90 +1,86 @@
-import React, { useState, createContext, useContext, useEffect } from "react";
-import axios from "axios";
+// src/providers/AuthProvider.jsx
 
-// --- 1. Create the Auth Context ---
+import React, { useState, createContext, useContext, useEffect } from "react";
+import api from "../helpers/axios";
+
 const AuthContext = createContext({
   user: null,
+  token: null,
   login: async () => ({ success: false, error: "Not implemented" }),
-  logout: async () => {},
+  logout: () => {},
   loading: true,
+  isAuthenticated: false,
 });
 
-// --- 2. Create the Auth Provider Component ---
 export const AuthProvider = ({ children }) => {
   const [user, setUser] = useState(null);
+  const [token, setToken] = useState(null);
   const [loading, setLoading] = useState(true);
 
-  // Restore user from sessionStorage on mount
+  // Restore user + token from localStorage on mount
   useEffect(() => {
-    const storedUser = sessionStorage.getItem("user");
-    if (storedUser) {
+    const storedUser = localStorage.getItem("user");
+    const storedToken = localStorage.getItem("token");
+
+    if (storedUser && storedToken) {
       setUser(JSON.parse(storedUser));
+      setToken(storedToken);
     }
     setLoading(false);
   }, []);
 
-  const login = async (userData) => {
+  const login = async (email, password) => {
     try {
-      // Replace with your actual API endpoint
-      const response = await axios.post("http://localhost:3000/users/auth", {
-        email: userData.email,
-        password: userData.password,
-      });
+      const response = await api.post("/auth/login", { email, password });
 
-      if (response.data.success) {
-        setUser(response.data.user);
-        sessionStorage.setItem("user", JSON.stringify(response.data.user));
-        console.log("Login successful:", response.data.user);
-        return {
-          success: true,
-          error: response.data.message,
-          user: response.data.user,
-        };
-      } else {
-        return { success: false, error: response.data.message };
+      if (response.data.status) {
+        const { user, token } = response.data.data;
+
+        setUser(user);
+        setToken(token);
+        localStorage.setItem("user", JSON.stringify(user));
+        localStorage.setItem("token", token);
+
+        return { success: true, user };
       }
+
+      return { success: false, error: response.data.message };
     } catch (error) {
-      console.error("Login failed:", error);
       return {
         success: false,
-        error:
-          error.response?.data?.message || "Login failed. Please try again.",
+        error: error.response?.data?.message || "Login failed. Please try again.",
       };
     }
   };
 
-  const logout = async () => {
-    try {
-      setUser(null);
-      sessionStorage.removeItem("user");
-
-      // Optionally, notify your backend about the logout
-    } catch (error) {
-      console.error("Logout error:", error);
-    } finally {
-      setUser(null);
-      sessionStorage.removeItem("user");
-    }
+  const logout = () => {
+    setUser(null);
+    setToken(null);
+    localStorage.removeItem("user");
+    localStorage.removeItem("token");
+    window.location.href = "/";
   };
 
   const value = {
     user,
+    token,
     login,
     logout,
     loading,
-    isAuthenticated: !!user,
+    isAuthenticated: !!user && !!token,
   };
 
-  return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;
+  return (
+    <AuthContext.Provider value={value}>
+      {children}
+    </AuthContext.Provider>
+  );
 };
 
-// --- 3. Create a custom hook to use the Auth Context ---
 export const useAuth = () => {
   const context = useContext(AuthContext);
-
   if (context === undefined) {
     throw new Error("useAuth must be used within an AuthProvider");
   }
-
   return context;
 };

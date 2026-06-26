@@ -1,15 +1,15 @@
-import viteLogo from "/vite.svg";
-import "./App.css";
+// src/App.jsx
+
 import { Outlet } from "react-router-dom";
 import NavBar from "./components/NavBar";
 import Footer from "./components/Footer";
 
 function App() {
   return (
-    <div>
+    <div className="flex flex-col min-h-screen">
       <NavBar />
-      <main className="main-content">
-        <Outlet /> {/* This is where your page content will render */}
+      <main className="flex-1">
+        <Outlet />
       </main>
       <Footer />
     </div>

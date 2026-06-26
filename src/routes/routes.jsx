@@ -1,24 +1,47 @@
-import { createBrowserRouter } from "react-router-dom";
+// src/routes/routes.jsx
 
-import { useAuth } from "../providers/AuthProvider";
+import { createBrowserRouter, Navigate } from "react-router-dom";
+
 import App from "../App";
 import Layout from "../components/Layout";
-import Home from "../pages/Home";
-import About from "../pages/About";
-import NotFound from "../pages/NotFound";
+import ProtectedRoute from "../components/ProtectedRoute";
+
+// Public pages
 import Login from "../pages/Login";
-import Signup from "../pages/signup";
+import Signup from "../pages/Signup";
+import NotFound from "../pages/NotFound";
+
+// User pages
 import UserProperty from "../pages/user/UserProperty";
 import MortgageCalculator from "../pages/user/MortgageCalculator";
-import OwnerProperty from "../pages/owner/OwnerProperty";
 import FavoriteProperty from "../pages/user/FavoriteProperty";
 
-const routes = [];
+// Owner pages
+import OwnerProperty from "../pages/owner/OwnerProperty";
 
-routes.push(
+// Shared pages
+import About from "../pages/About";
+import Home from "../pages/Home";
+
+const router = createBrowserRouter([
+  // ─── Public routes ──────────────────────────────────────────────────────────
+  {
+    path: "/",
+    element: <Login />,
+  },
+  {
+    path: "/signup",
+    element: <Signup />,
+  },
+
+  // ─── User routes ─────────────────────────────────────────────────────────────
   {
     path: "/user",
-    element: <Layout />,
+    element: (
+      <ProtectedRoute allowedRoles={["USER"]}>
+        <Layout />
+      </ProtectedRoute>
+    ),
     errorElement: <NotFound />,
     children: [
       {
@@ -34,14 +57,45 @@ routes.push(
         element: <MortgageCalculator />,
       },
       {
-        path: "property-favorite",
+        path: "favorites",
         element: <FavoriteProperty />,
       },
     ],
   },
+
+  // ─── Owner routes ─────────────────────────────────────────────────────────────
+  {
+    path: "/owner",
+    element: (
+      <ProtectedRoute allowedRoles={["OWNER"]}>
+        <Layout />
+      </ProtectedRoute>
+    ),
+    errorElement: <NotFound />,
+    children: [
+      {
+        index: true,
+        element: <OwnerProperty />,
+      },
+      {
+        path: "my-properties",
+        element: <OwnerProperty />,
+      },
+      {
+        path: "about",
+        element: <About />,
+      },
+    ],
+  },
+
+  // ─── Admin routes ─────────────────────────────────────────────────────────────
   {
     path: "/admin",
-    element: <Layout />,
+    element: (
+      <ProtectedRoute allowedRoles={["ADMIN"]}>
+        <Layout />
+      </ProtectedRoute>
+    ),
     errorElement: <NotFound />,
     children: [
       {
@@ -54,35 +108,12 @@ routes.push(
       },
     ],
   },
-  {
-    path: "/owner",
-    element: <Layout />,
-    errorElement: <NotFound />,
-    children: [
-      {
-        index: true,
-        element: <Home />,
-      },
-      {
-        path: "properties",
-        element: <div>All properties here</div>,
-      },
-      {
-        path: "my-properties",
-        element: <OwnerProperty />,
-      },
-    ],
-  },
-  {
-    path: "/signup",
-    element: <Signup />,
-  },
-  {
-    path: "/",
-    element: <Login />,
-  }
-);
 
-const router = createBrowserRouter(routes);
+  // ─── Fallback ─────────────────────────────────────────────────────────────────
+  {
+    path: "*",
+    element: <NotFound />,
+  },
+]);
 
 export default router;

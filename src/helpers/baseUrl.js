@@ -1,3 +1,5 @@
-const BASE_URL = import.meta.env.BASE_URL || "http://localhost:3000"; // Replace with your backend URL
+// src/helpers/baseUrl.js
+
+const BASE_URL = import.meta.env.VITE_API_URL || "http://localhost:3000/api";
 
 export default BASE_URL;
